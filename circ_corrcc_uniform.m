@@ -1,45 +1,69 @@
-function [rho] = circ_corrcc_uniform(alpha1, alpha2)
+function [rho, pHodgesAjne] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
 %
-% [rho pval ts] = circ_corrcc_uniform(alpha1, alpha2)
+% [rho, pHodgesAjne] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
 %   Circular correlation coefficient for two periodic signals with
 %   uniformly distributed phase directions
 %
 %   Input:
-%     alpha1	sample of angles in radians
-%     alpha2	sample of angles in radians
+%     alpha1	            sample of angles in radians
+%     alpha2                sample of angles in radians
+%     test_uniform          perform Hodges-Ajne test for uniform distribution of input signals (default = 1)
+%     test_uniform_alpha    alpha threshold for Hodges-Ajne test (default = .05)
 %
 %   Output:
-%     rho     correlation coefficient
-%     pval    p-value
+%     rho                   correlation coefficient
+%     pHodgesAjne           Hodges-Ajne test (circ_otest) for non-uniformity of
+%                           input signals
 %
 % References:
-%   Topics in circular statistics, S.R. Jammalamadaka et al., Chapter 8.ii (formula 8.2.4) 
+%   Circular correlation in EEG hyperscanning:
+%       Zimmermann et al. (under revision). Arbitrary methodological decisions skew inter-brain synchronization estimates in hyperscanning-EEG studies.
+%   CircStat toolbox:
+%       Berens, P. (2009). CircStat: A MATLAB Toolbox for Circular Statistics. Journal of Statistical Software, 31(10), 1–21. https://doi.org/10.18637/jss.v031.i10
+%   Topics on circular statistics:
+%       Topics in circular statistics, S.R. Jammalamadaka et al., Chapter 8.ii (formula 8.2.4) 
 %
-% PHB   6/7/2008
-% MZ    1/8/2020 (uniform)
+
+% adapted from Circular Statistics Toolbox for Matlab
+%   by Philipp Berens, 2009
+%   berens@tuebingen.mpg.de - www.kyb.mpg.de/~berens/circStat.html
 %
-% Circular Statistics Toolbox for Matlab
-
-% By Philipp Berens, 2009
-% berens@tuebingen.mpg.de - www.kyb.mpg.de/~berens/circStat.html
+% edited by Marius Zimmermann, 2024, University of Regensburg
+%   marius.zimmermann@ur.de
 %
-% edited by Marius Zimmermann, 2020 (marz@dtu.dk)
+% Versions
+%   PHB   6/7/2008
+%   MZ    20/9/2024 (adjusted for uniform distributions, e.g. EEG data)
+%
 
-
-if size(alpha1,2) > size(alpha1,1)
-	alpha1 = alpha1';
+%% check input arguments and default values
+arguments
+    alpha1  double {mustBeVector}
+    alpha2  double {mustBeVector,mustBeEqualSize(alpha1,alpha2)}
+    test_uniform {mustBeNumeric,mustBeNonempty,mustBeMember(test_uniform,[0 1])} = 1;
+    test_uniform_alpha {mustBeNumeric,mustBeNonempty,mustBeInRange(test_uniform_alpha,0,1,'exclude-lower')} = .05;
 end
 
-if size(alpha2,2) > size(alpha2,1)
-	alpha2 = alpha2';
+if ~iscolumn(alpha1)
+    alpha1 = reshape(alpha1,[length(alpha1) 1]);
+    alpha2 = reshape(alpha2,[length(alpha2) 1]);
 end
 
-if length(alpha1)~=length(alpha2)
-  error('Input dimensions do not match.')
+%% perform Hedges-Ajne test for non-uniformity of input data (using circ_otest)
+% H0: the population is uniformly distributed around the circle
+% HA: the population is not uniformly distributed around the circle
+
+if test_uniform
+    pHodgesAjne = nan(1,2);
+    pHodgesAjne(1) = circ_otest(alpha1);
+    pHodgesAjne(2) = circ_otest(alpha2);
+    
+    if any(pHodgesAjne < test_uniform_alpha)
+        warning(sprintf('input signal(s) not uniformly distributed! p[alpha1] = %.3f, p[alpha2] = %.3f',pHodgesAjne))
+    end
 end
 
-% calc circular correlations for uniform distrubution
-
+%% calc circular correlations for uniform distrubution
 % using:
 % m - n = circ_mean(wrapToPi(alpha1-alpha2));
 % m + n = circ_mean(wrapToPi(alpha1+alpha2));
@@ -60,14 +84,15 @@ den     = 2*sqrt( sum(x_sin .^2) .* sum(y_sin .^2));
 
 rho = num / den;
 
-% % compute pvalue
-% n = length(alpha1);
-% alpha1_bar = circ_mean(alpha1);
-% alpha2_bar = circ_mean(alpha2);
-% l20 = mean(sin(alpha1 - alpha1_bar).^2);
-% l02 = mean(sin(alpha2 - alpha2_bar).^2);
-% l22 = mean((sin(alpha1 - alpha1_bar).^2) .* (sin(alpha2 - alpha2_bar).^2));
+end
 
-% ts = sqrt((n * l20 * l02)/l22) * rho;
-% pval = 2 * (1 - normcdf(abs(ts)));
 
+%% Custom validation function (source: matlab help center)
+function mustBeEqualSize(a,b)
+    % Test for equal size
+    if ~isequal(size(a),size(b))
+        eid = 'Size:notEqual';
+        msg = 'Size of first input must equal size of second input.';
+        error(eid,msg)
+    end
+end
