@@ -45,8 +45,8 @@ def circ_corrcc_uniform(alpha1, alpha2, test_uniform=True, test_uniform_alpha=0.
         pHodgesAjne_alpha2 = hodges_ajne_test(alpha2, test_uniform_alpha)
     
     # Adjusted circular mean for alpha1 and alpha2
-    n = -1 * (circ_mean(np.angle(alpha1 - alpha2)) - circ_mean(np.angle(alpha1 + alpha2))) / 2
-    m = circ_mean(np.angle(alpha1 - alpha2)) + n
+    n = -1 * (circ_mean(np.angle(np.exp(1j * (alpha1 - alpha2)))) - circ_mean(np.angle(np.exp(1j * (alpha1 + alpha2))))) / 2
+    m = circ_mean(np.angle(np.exp(1j * (alpha1 - alpha2)))) + n
 
     x_sin = np.sin(alpha1 - m)
     y_sin = np.sin(alpha2 - n)
