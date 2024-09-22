@@ -1,4 +1,4 @@
-function [rho, pHodgesAjne] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
+function [rho, pval, uniform] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
 %
 % [rho, pHodgesAjne] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
 %   Circular correlation coefficient for two periodic signals with
@@ -12,8 +12,11 @@ function [rho, pHodgesAjne] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, 
 %
 %   Output:
 %     rho                   correlation coefficient
-%     pHodgesAjne           Hodges-Ajne test (circ_otest) for non-uniformity of
-%                           input signals
+%     pval                  p value for correlation
+%     uniform               structure with Hodges-Ajne test (circ_otest) for non-uniformity of input signals
+%        .h                 test result
+%        .p_alpha1          p value alpha 1
+%        .p_alpha2          p value alpha 2
 %
 % References:
 %   Circular correlation in EEG hyperscanning:
@@ -57,11 +60,18 @@ if test_uniform
     pHodgesAjne = nan(1,2);
     pHodgesAjne(1) = circ_otest(alpha1);
     pHodgesAjne(2) = circ_otest(alpha2);
+
+    uniform.h = any(pHodgesAjne < test_uniform_alpha);
+    uniform.p_alpha1 = pHodgesAjne(1);
+    uniform.p_alpha2 = pHodgesAjne(2);
     
     if any(pHodgesAjne < test_uniform_alpha)
         warning(sprintf('input signal(s) not uniformly distributed! p[alpha1] = %.3f, p[alpha2] = %.3f',pHodgesAjne))
     end
+else
+    uniform = NaN;
 end
+
 
 %% calc circular correlations for uniform distrubution
 % using:
@@ -83,6 +93,15 @@ num     = (r_minus - r_plus);
 den     = 2*sqrt( sum(x_sin .^2) .* sum(y_sin .^2));
 
 rho = num / den;
+
+%% compute p value
+l20 = mean(sin(alpha1 - circ_mean(alpha1)).^2);
+l02 = mean(sin(alpha2 - circ_mean(alpha2)).^2);
+l22 = mean((sin(alpha1 - circ_mean(alpha1)).^2) .* (sin(alpha2 - circ_mean(alpha2)).^2));
+
+ts = sqrt((n * l20 * l02)/l22) * rho;
+pval = 2 * (1 - normcdf(abs(ts)));
+
 
 end
 
