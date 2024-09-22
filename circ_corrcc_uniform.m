@@ -95,13 +95,12 @@ den     = 2*sqrt( sum(x_sin .^2) .* sum(y_sin .^2));
 rho = num / den;
 
 %% compute p value
-l20 = mean(sin(alpha1 - circ_mean(alpha1)).^2);
-l02 = mean(sin(alpha2 - circ_mean(alpha2)).^2);
-l22 = mean((sin(alpha1 - circ_mean(alpha1)).^2) .* (sin(alpha2 - circ_mean(alpha2)).^2));
+l20 = mean(sin(alpha1 - circ_mean(wrapToPi(alpha1))).^2);
+l02 = mean(sin(alpha2 - circ_mean(wrapToPi(alpha2))).^2);
+l22 = mean((sin(alpha1 - circ_mean(wrapToPi(alpha1))).^2) .* (sin(alpha2 - circ_mean(wrapToPi(alpha2))).^2));
 
-ts = sqrt((n * l20 * l02)/l22) * rho;
+ts = sqrt((length(alpha1) * l20 * l02)/l22) * rho;
 pval = 2 * (1 - normcdf(abs(ts)));
-
 
 end
 
