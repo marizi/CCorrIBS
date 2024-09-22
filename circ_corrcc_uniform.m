@@ -1,6 +1,6 @@
 function [rho, pval, uniform] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
 %
-% [rho, pHodgesAjne] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
+% [rho, pval, uniform] = circ_corrcc_uniform(alpha1, alpha2, test_uniform, test_uniform_alpha)
 %   Circular correlation coefficient for two periodic signals with
 %   uniformly distributed phase directions
 %
